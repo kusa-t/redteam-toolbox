@@ -1,0 +1,57 @@
+# Hash Cracking
+
+## NTLM
+```bash
+ashcat -m 1000 <hash> /usr/share/wordlists/rockyou.txt -r /usr/share/hashcat/rules/best64.rule
+```
+
+## Kerberoast
+```bash
+hashcat -m 13100 <hash> /usr/share/wordlists/rockyou.txt -r /usr/share/hashcat/rules/best64.rule
+```
+
+## SSH Private key
+```bash
+ssh2john id_rsa > id_rsa.hash
+```
+
+remove first `id_rsa:` from id_rsa.hash
+```bash
+hashcat -m 22931 <hash> /usr/share/wordlists/rockyou.txt -r /usr/share/hashcat/rules/best64.rule
+```
+
+## Ansible
+* ansible-vault
+
+1. write encrypted text to yml
+```vault.yml
+$ANSIBLE_VAULT;1.1;AES256
+66643733653335656662343832633439353565343839386538643763643531343065366661633634
+6262313438663539373565646533383430326130313532380a316132313636383633386532333765
+37323838343038393738313831636163643638623162323630656434346433346664613233393036
+6638663531343866380a313634353331333331623565303833323663623265616131633934623134
+62656439343264376638643033633037666534656631333963333638326131653764
+``` 
+
+2. convert yml to hashcat format
+```bash
+ansible2john vault.yml > vault.hash
+```
+
+3. crack
+`<filename>:` should be removed before cracking
+```bash
+hashcat -m 16900 vault.hash /usr/share/wordlists/rockyou.txt -r /usr/share/hashcat/rules/dive.rule
+```
+
+4. decrypt the encrypted text with cracked password
+```bash
+echo '$ANSIBLE_VAULT;1.1;AES256
+66643733653335656662343832633439353565343839386538643763643531343065366661633634
+6262313438663539373565646533383430326130313532380a316132313636383633386532333765
+37323838343038393738313831636163643638623162323630656434346433346664613233393036
+6638663531343866380a313634353331333331623565303833323663623265616131633934623134
+62656439343264376638643033633037666534656631333963333638326131653764' | ansible-vault decrypt -
+
+> Vault password: <cracked password>
+```
